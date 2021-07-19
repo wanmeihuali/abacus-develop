@@ -2,7 +2,7 @@
 #include "global.h"
 #include "sto_elec.h" 
 #include "occupy.h"
-#include "symmetry_rho.h"
+#include "../module_symmetry/symmetry_rho.h"
 #include "../src_io/wf_io.h"
 #include "H_Ewald_pw.h"
 
@@ -51,7 +51,7 @@ void Stochastic_Elec::scf_stochastic(const int &istep)
 	Symmetry_rho srho;
 	for(int is=0; is<NSPIN; is++)
 	{
-		srho.begin(is);
+		srho.begin(is, CHR, pw, Pgrid, symm);
 	}
 
 	// conv_elec is a member of Threshold_Elec
@@ -214,7 +214,7 @@ void Stochastic_Elec::scf_stochastic(const int &istep)
 		Symmetry_rho srho;
 		for(int is=0; is<NSPIN; is++)
 		{
-			srho.begin(is);
+			srho.begin(is, CHR, pw, Pgrid, symm);
 		}
 
 

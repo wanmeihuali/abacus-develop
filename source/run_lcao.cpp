@@ -7,7 +7,7 @@
 #include "module_neighbor/sltk_atom_arrange.h"
 #include "src_lcao/LOOP_cell.h"
 #include "src_io/print_info.h"
-#include "src_pw/symmetry.h"
+#include "module_symmetry/symmetry.h"
 
 Run_lcao::Run_lcao(){}
 Run_lcao::~Run_lcao(){}
@@ -61,7 +61,7 @@ void Run_lcao::lcao_line(void)
     // symmetry analysis should be performed every time the cell is changed
     if (Symmetry::symm_flag)
     {
-        symm.analy_sys();
+        symm.analy_sys(ucell, out);
         DONE(ofs_running, "SYMMETRY");
     }
 

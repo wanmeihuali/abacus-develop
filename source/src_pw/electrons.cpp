@@ -1,7 +1,7 @@
 #include "tools.h"
 #include "global.h"
 #include "electrons.h"
-#include "symmetry_rho.h"
+#include "../module_symmetry/symmetry_rho.h"
 #include "../src_io/wf_io.h"
 #include "../src_io/chi0_hilbert.h"
 #include "../src_io/chi0_standard.h"
@@ -127,7 +127,7 @@ void Electrons::self_consistent(const int &istep)
     Symmetry_rho srho;
     for(int is=0; is<NSPIN; is++)
     {
-        srho.begin(is);
+        srho.begin(is, CHR, pw, Pgrid, symm);
     }
 
     // conv_elec is a member of Threshold_Elec
@@ -233,7 +233,7 @@ void Electrons::self_consistent(const int &istep)
 		Symmetry_rho srho;
 		for(int is=0; is<NSPIN; is++)
 		{
-			srho.begin(is);
+			srho.begin(is, CHR, pw, Pgrid, symm);
 		}
 
         //(7) compute magnetization, only for LSDA(spin==2)

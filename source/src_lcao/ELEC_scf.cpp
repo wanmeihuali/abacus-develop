@@ -1,7 +1,7 @@
 #include "ELEC_scf.h"
 #include "../src_pw/global.h"
 #include "../src_io/chi0_hilbert.h"
-#include "../src_pw/symmetry_rho.h"
+#include "../module_symmetry/symmetry_rho.h"
 #include "dftu.h"
 #include "LCAO_evolve.h"
 #include "ELEC_cbands_k.h"
@@ -37,7 +37,7 @@ void ELEC_scf::scf(const int &istep)
 	Symmetry_rho srho;
 	for(int is=0; is<NSPIN; is++)
 	{
-		srho.begin(is);
+		srho.begin(is, CHR, pw, Pgrid, symm);
 	}
 
 //	cout << scientific;
@@ -379,7 +379,7 @@ void ELEC_scf::scf(const int &istep)
 		Symmetry_rho srho;
 		for(int is=0; is<NSPIN; is++)
 		{
-			srho.begin(is);
+			srho.begin(is, CHR, pw, Pgrid, symm);
 		}
 
 		// (6) compute magnetization, only for spin==2
