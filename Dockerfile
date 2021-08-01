@@ -1,4 +1,5 @@
-FROM debian:buster-slim
+#FROM debian:buster-slim
+FROM nvidia/cuda:11.0-devel
 
 RUN apt-get update && apt-get install -y --no-install-recommends git gfortran libboost-dev libssl-dev make ssh vim wget bc \
     && apt-get install -y --no-install-recommends mpich libmpich-dev

@@ -9,3 +9,5 @@ result.out
 .cache
 .vscode
 html
+.idea
+cmake-build-debug

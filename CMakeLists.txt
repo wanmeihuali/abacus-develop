@@ -8,7 +8,7 @@ project(ABACUS
     VERSION 2.2.0
     DESCRIPTION "ABACUS is an electronic structure package based on DFT."
     HOMEPAGE_URL "https://github.com/deepmodeling/abacus-develop"
-    LANGUAGES CXX
+    LANGUAGES CXX CUDA
 )
 
 option(ENABLE_DEEPKS "Enable DeePKS functionality" OFF)
@@ -131,6 +131,10 @@ target_link_libraries(${ABACUS_BIN_NAME}
     MPI::MPI_CXX
     OpenMP::OpenMP_CXX
     Threads::Threads
+)
+
+set_target_properties(${ABACUS_BIN_NAME}
+    PROPERTIES CUDA_SEPARABLE_COMPILATION ON
 )
 
 if(DEFINED MKL_DIR_CACHE)

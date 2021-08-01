@@ -8,3 +8,7 @@ add_library(
     sltk_grid.cpp
     sltk_grid_driver.cpp
 )
+
+set_target_properties(${neighbor}
+    PROPERTIES CUDA_SEPARABLE_COMPILATION ON
+)
