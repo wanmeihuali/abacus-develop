@@ -1,6 +1,9 @@
+#include <boost/progress.hpp>
+
 #include "sltk_grid.h"
 #include "sltk_atom_input.h"
 #include "../src_pw/tools.h"
+#include <iostream>
 //#include "../src_pw/global.h"
 //=================
 // Class AtomLink
@@ -767,9 +770,14 @@ void Grid::Construct_Adjacent_expand(
 //----------------------------------------------------------
 // EXPLAIN : Only construct AdjacentSet for 'true' cell.
 //----------------------------------------------------------
-	for (int ia = 0;ia < Cell[true_i][true_j][true_k].length;ia++)
+	//for (int ia = 0;ia < Cell[true_i][true_j][true_k].length;ia++)
+	int ia_range = Cell[true_i][true_j][true_k].length;
+	boost::progress_display show_progress(ia_range);
+	for (int ia = 0; ia < ia_range; ++ia)
 	{
 		Cell[true_i][true_j][true_k].address[ia].fatom.allocate_AdjacentSet();
+
+		std::cout << Cell[true_i][true_j][true_k].address[ia].fatom.getAdjacentSet()->idx << "\n";
 
 		if (this->pbc)
 		{
@@ -779,6 +787,7 @@ void Grid::Construct_Adjacent_expand(
 		{
 			WARNING_QUIT("Construct_Adjacent_expand", "\n Expand case, must use periodic boundary.");
 		}
+		++show_progress;
 	}
 	return;
 }
@@ -790,7 +799,6 @@ void Grid::Construct_Adjacent_expand_periodic(
 	const int true_ia)
 {
 //	if (test_grid)TITLE(ofs_running, "Grid", "Construct_Adjacent_expand_periodic");
-
 	for (int i = 0;i < this->dx;i++)
 	{
 		for (int j = 0;j < this->dy;j++)
@@ -804,7 +812,6 @@ void Grid::Construct_Adjacent_expand_periodic(
 			}
 		}
 	}
-
 	return;
 }
 

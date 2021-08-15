@@ -14,9 +14,10 @@ bool AdjacentSet::expand_flag = false;
 int AdjacentSet::trueX = 1;
 int AdjacentSet::trueY = 1;
 int AdjacentSet::trueZ = 1;
+int AdjacentSet::idx_counter = 0;
 
 
-AdjacentSet::AdjacentSet()
+AdjacentSet::AdjacentSet() : idx(idx_counter++)
 {
 	this->length = 0;
 }

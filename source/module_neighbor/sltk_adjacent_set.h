@@ -41,6 +41,8 @@ private:
 	static int trueX;
 	static int trueY;
 	static int trueZ;
+	static int idx_counter;
+
 	//==========================================================
 // MEMBER STATIC FUNCTION :
 // NAME : index
@@ -113,7 +115,7 @@ public:
 	// so I change short to int.
 	std::vector<int> offset;
 	std::vector<int> box;
-
+	int const idx;
 };
 
 #endif
