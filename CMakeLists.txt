@@ -17,7 +17,7 @@ option(ENABLE_ASAN "Enable AddressSanitizer" OFF)
 if(ENABLE_DEEPKS)
   set(CMAKE_CXX_STANDARD 14)
 else()
-  set(CMAKE_CXX_STANDARD 11)
+  set(CMAKE_CXX_STANDARD 14)
 endif()
 if(ENABLE_ASAN)
   add_compile_options(
