@@ -5,6 +5,10 @@
 #include "../src_pw/tools.h"
 #include <iostream>
 //#include "../src_pw/global.h"
+#ifdef ENABLE_CUDA
+#include "sltk_grid.cuh"
+#endif
+
 //=================
 // Class AtomLink
 //=================
@@ -716,6 +720,9 @@ void Grid::Construct_Adjacent_expand(
 	const int true_j, 
 	const int true_k)
 {
+#ifdef ENABLE_CUDA
+	Construct_Adjacent_expand_Cuda(this, true_i, true_j, true_k);
+#else
 //	if (test_grid)TITLE(ofs_running, "Grid", "Construct_Adjacent_expand");
 
 //----------------------------------------------------------
@@ -789,6 +796,7 @@ void Grid::Construct_Adjacent_expand(
 		}
 		++show_progress;
 	}
+#endif
 	return;
 }
 

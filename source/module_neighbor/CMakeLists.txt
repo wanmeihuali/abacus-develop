@@ -1,3 +1,8 @@
+add_compile_definitions(ENABLE_CUDA)
+
+find_package(Thrust REQUIRED CONFIG)
+thrust_create_target(Thrust)
+
 add_library(
     neighbor
     OBJECT
@@ -7,6 +12,7 @@ add_library(
     sltk_atom_input.cpp
     sltk_grid.cpp
     sltk_grid_driver.cpp
+    sltk_grid.cu    
 )
 
 set_target_properties(${neighbor}
@@ -14,3 +20,5 @@ set_target_properties(${neighbor}
 )
 
 target_link_libraries(neighbor PRIVATE OpenMP::OpenMP_CXX)
+
+target_link_libraries(neighbor Thrust)

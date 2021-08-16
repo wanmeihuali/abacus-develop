@@ -1,9 +1,6 @@
-#include <boost/progress.hpp>
-
+#include "sltk_grid.cuh"
 #include "../src_pw/tools.h"
 #include "sltk_atom_input.h"
-#include "sltk_grid.h"
-#include <iostream>
 
 void Construct_Adjacent_expand_Cuda(Grid *grid, const int true_i,
                                     const int true_j, const int true_k) {
@@ -59,7 +56,6 @@ void Construct_Adjacent_expand_Cuda(Grid *grid, const int true_i,
     //----------------------------------------------------------
     // for (int ia = 0;ia < Cell[true_i][true_j][true_k].length;ia++)
     int true_ia_range = grid->Cell[true_i][true_j][true_k].length;
-    boost::progress_display show_progress(true_ia_range);
     for (int true_ia = 0; true_ia < true_ia_range; ++true_ia) {
         grid->Cell[true_i][true_j][true_k]
             .address[true_ia]
@@ -124,7 +120,6 @@ void Construct_Adjacent_expand_Cuda(Grid *grid, const int true_i,
                 }
             }
         }
-        ++show_progress;
     } else {
         WARNING_QUIT("Construct_Adjacent_expand",
                      "\n Expand case, must use periodic boundary.");
