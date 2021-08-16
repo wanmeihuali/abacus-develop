@@ -19,6 +19,4 @@ set_target_properties(${neighbor}
     PROPERTIES CUDA_SEPARABLE_COMPILATION ON
 )
 
-target_link_libraries(neighbor PRIVATE OpenMP::OpenMP_CXX)
-
-target_link_libraries(neighbor Thrust)
+target_link_libraries(neighbor PRIVATE OpenMP::OpenMP_CXX Tjrust)

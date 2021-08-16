@@ -55,3 +55,8 @@ RUN cd /tmp \
     && cp -r libtorch/lib /usr/local \
     && cp -r libtorch/share /usr/local \
     && rm -rf libtorch
+
+RUN cd /tmp \
+    && git clone --recursive https://github.com/NVIDIA/thrust.git \
+    && cd thrust && mkdir build && cd build && cmake .. && make install \
+    && cd /tmp && rm -rf thrust
