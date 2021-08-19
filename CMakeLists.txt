@@ -11,7 +11,7 @@ project(ABACUS
     LANGUAGES CXX CUDA
 )
 
-option(ENABLE_DEEPKS "Enable DeePKS functionality" OFF)
+option(ENABLE_DEEPKS "Enable DeePKS functionality" ON)
 option(ENABLE_ASAN "Enable AddressSanitizer" OFF)
 
 if(ENABLE_DEEPKS)
@@ -66,7 +66,7 @@ if(ENABLE_DEEPKS)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
   FetchContent_Declare(
     libnpy
-    GIT_REPOSITORY https://github.com.cnpmjs.org/llohse/libnpy.git
+    GIT_REPOSITORY https://github.com/llohse/libnpy.git
   )
   FetchContent_MakeAvailable(libnpy)
   include_directories(

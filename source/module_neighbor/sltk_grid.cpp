@@ -5,8 +5,9 @@
 #include "../src_pw/tools.h"
 #include <iostream>
 //#include "../src_pw/global.h"
-#ifdef ENABLE_CUDA
-#include "sltk_grid.cuh"
+//#define ENABLE_TORCH
+#ifdef ENABLE_TORCH
+#include <torch/torch.h>
 #endif
 
 //=================
@@ -720,9 +721,6 @@ void Grid::Construct_Adjacent_expand(
 	const int true_j, 
 	const int true_k)
 {
-#ifdef ENABLE_CUDA
-	Construct_Adjacent_expand_Cuda(this, true_i, true_j, true_k);
-#else
 //	if (test_grid)TITLE(ofs_running, "Grid", "Construct_Adjacent_expand");
 
 //----------------------------------------------------------
@@ -778,6 +776,9 @@ void Grid::Construct_Adjacent_expand(
 // EXPLAIN : Only construct AdjacentSet for 'true' cell.
 //----------------------------------------------------------
 	//for (int ia = 0;ia < Cell[true_i][true_j][true_k].length;ia++)
+#ifdef ENABLE_TORCH
+	Construct_Adjacent_expand_periodic_by_torch(true_i, true_j, true_k);
+#else
 	int ia_range = Cell[true_i][true_j][true_k].length;
 	boost::progress_display show_progress(ia_range);
 	for (int ia = 0; ia < ia_range; ++ia)
@@ -799,6 +800,146 @@ void Grid::Construct_Adjacent_expand(
 #endif
 	return;
 }
+
+#ifdef ENABLE_TORCH
+	void Grid::Construct_Adjacent_expand_periodic_by_torch(const int true_i, const int true_j, const int true_k) {
+		uint64_t const cell_count{this->dx * this->dy * this->dz};
+
+		int true_ia_range = this->Cell[true_i][true_j][true_k].length;
+		for (int true_ia = 0; true_ia < true_ia_range; ++true_ia) {
+			this->Cell[true_i][true_j][true_k]
+				.address[true_ia]
+				.fatom.allocate_AdjacentSet();
+		}
+
+		std::cout << "Preparing data..." << std::endl;
+		auto x = torch::empty({true_ia_range}, at::kDouble);
+		auto y = torch::empty({true_ia_range}, at::kDouble);
+		auto z = torch::empty({true_ia_range}, at::kDouble);
+		{
+			for (int64_t ia{0}; ia < true_ia_range; ++ia) {
+				x[ia] = this->Cell[true_i][true_j][true_k].address[ia].fatom.x();
+				y[ia] = this->Cell[true_i][true_j][true_k].address[ia].fatom.y();
+				z[ia] = this->Cell[true_i][true_j][true_k].address[ia].fatom.z();
+			}
+		}
+		auto cell_offset = torch::empty({cell_count + 1}, at::kLong);
+				{
+			int64_t current_offset{0U};
+			int64_t cell_idx{0U};
+			for (int i{0}; i < this->dx; i++) {
+				for (int j{0}; j < this->dy; j++) {
+					for (int k{0}; k < this->dz; k++) {
+						cell_offset[cell_idx] = current_offset;
+						++cell_idx;
+						current_offset += this->Cell[i][j][k].length;
+
+					}
+				}
+			}   
+			cell_offset[cell_idx] = current_offset;
+		}
+		int64_t total_ia_range{cell_offset[-1].item<int64_t>()};
+		auto x2 = torch::empty({total_ia_range}, at::kDouble);
+		auto y2 = torch::empty({total_ia_range}, at::kDouble);
+		auto z2 = torch::empty({total_ia_range}, at::kDouble);
+
+		{
+			uint32_t idx{0};
+			for (int i{0}; i < this->dx; i++) {
+				for (int j{0}; j < this->dy; j++) {
+					for (int k{0}; k < this->dz; k++) {
+						for (int64_t ia{0}; ia < this->Cell[i][j][k].length; ++ia) {
+							x2[idx] = this->Cell[i][j][k].address[ia].fatom.x();
+							y2[idx] = this->Cell[i][j][k].address[ia].fatom.y();
+							z2[idx] = this->Cell[i][j][k].address[ia].fatom.z();
+							if (!this->expand_flag){
+								const int b0 = this->Cell[i][j][k].in_grid[0];
+								const int b1 = this->Cell[i][j][k].in_grid[1];
+								const int b2 = this->Cell[i][j][k].in_grid[2];
+								x2[idx] += b0 * this->vec1[0] + b1 * this->vec2[0] + b2 * this->vec3[0];
+								y2[idx] += b0 * this->vec1[1] + b1 * this->vec2[1] + b2 * this->vec3[1];
+								z2[idx] += b0 * this->vec1[2] + b1 * this->vec2[2] + b2 * this->vec3[2];
+							}
+							idx++;
+						}
+					}
+				}
+			}   
+		}
+
+		std::cout << "Moving data to GPU..." << std::endl;
+		x = x.to(torch::kCUDA);
+		y = y.to(torch::kCUDA);
+		z = z.to(torch::kCUDA);
+				
+		std::cout << "Start computing..." << std::endl;
+
+		/* we can't do this because true_ia_range x total_ia_range matrix is too large.
+		// true_ia_range x total_ia_range matrix
+		auto dr_square = at::outer(x, x2) * (-2.0) + at::square(x).unsqueeze(-1).repeat({1, total_ia_range}) + at::square(x2).unsqueeze(0).repeat({true_ia_range, 1}) +
+			at::outer(y, y2) * (-2.0) + at::square(y).unsqueeze(-1).repeat({1, total_ia_range}) + at::square(y2).unsqueeze(0).repeat({true_ia_range, 1}) +
+			at::outer(z, z2) * (-2.0) + at::square(z).unsqueeze(-1).repeat({1, total_ia_range}) + at::square(z2).unsqueeze(0).repeat({true_ia_range, 1});
+
+		auto indices = (dr_square != 0.0 & dr_square <= this->sradius * this->sradius).nonzero_numpy();
+		*/
+		// Instead, we use a loop to do so.
+		{
+			const int64_t batch_size = 512;
+			int32_t cell_offset_idx = 0;
+			boost::progress_display show_progress(total_ia_range / batch_size + 1);
+			for (int64_t start_col{0}; start_col < total_ia_range; start_col += batch_size)
+			{
+				int64_t end_col = (start_col + batch_size <= total_ia_range) ? (start_col + batch_size) : total_ia_range;
+				auto sub_x2 = x2.slice(0, start_col, end_col);
+				auto sub_y2 = y2.slice(0, start_col, end_col);
+				auto sub_z2 = z2.slice(0, start_col, end_col);
+				sub_x2 = sub_x2.to(torch::kCUDA);
+				sub_y2 = sub_y2.to(torch::kCUDA);
+				sub_z2 = sub_z2.to(torch::kCUDA);
+				auto dr_square = at::outer(x, sub_x2) * (-2.0);
+				dr_square += at::square(x).unsqueeze(-1);
+				dr_square += at::square(sub_x2).unsqueeze(0);
+				dr_square += at::outer(y, sub_y2) * (-2.0);
+				dr_square += at::square(y).unsqueeze(-1);
+				dr_square += at::square(sub_y2).unsqueeze(0);
+				dr_square += at::outer(z, sub_z2) * (-2.0);
+				dr_square += at::square(z).unsqueeze(-1);
+				dr_square += at::square(sub_z2).unsqueeze(0);
+
+				auto indices = at::logical_and(dr_square != 0.0, dr_square <= this->sradius * this->sradius).nonzero().to(torch::kCPU);
+				std::cout << "sradius:" << this->sradius <<std::endl;
+				std::cout << indices << std::endl;
+				if (indices.size(0) != 0)
+				{
+					std::cout << dr_square <<std::endl;
+					indices.slice(1, 1, -1) += start_col;
+					for (int32_t idx = 0; idx < indices.size(0); ++idx)
+					{
+						int32_t true_ia = indices[idx][0].item<int32_t>();
+						int32_t ia_offset = indices[idx][1].item<int32_t>();
+						while (cell_offset_idx < cell_offset.size(0) && cell_offset[cell_offset_idx].item<int32_t>() > ia_offset)
+						{
+							cell_offset_idx++;
+						}
+						int32_t i2 = cell_offset_idx / this->dz /this->dy;
+						int32_t j2 = (cell_offset_idx / this->dz) % this->dy;
+						int32_t k2 = cell_offset_idx % this->dz;
+						int32_t ia2 = ia_offset - cell_offset[cell_offset_idx].item<int32_t>();
+						const int b0 = this->Cell[i2][j2][k2].in_grid[0];
+						const int b1 = this->Cell[i2][j2][k2].in_grid[1];
+						const int b2 = this->Cell[i2][j2][k2].in_grid[2];
+						int offset = Cell[i2][j2][k2].address - this->atomlink;
+						offset += ia2;
+						Cell[true_i][true_j][true_k].address[true_ia].fatom.getAdjacentSet()->set(b0, b1, b2, offset, test_grid);
+					}
+				}
+				++show_progress;
+			}
+		}
+
+	}
+#endif
 
 void Grid::Construct_Adjacent_expand_periodic(
     const int true_i, 
