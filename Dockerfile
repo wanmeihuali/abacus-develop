@@ -1,5 +1,5 @@
 FROM debian:buster-slim
-FROM nvidia/cuda:11.1-devel
+FROM nvidia/cuda:11.1-cudnn8-devel
 
 RUN apt-get update && apt-get install -y --no-install-recommends git gfortran libboost-dev libssl-dev make ssh vim wget bc \
     && apt-get install -y --no-install-recommends mpich libmpich-dev
@@ -49,8 +49,8 @@ ENV LD_LIBRARY_PATH /usr/local/lib
 RUN apt-get install -y unzip
 
 RUN cd /tmp \
-    && wget https://download.pytorch.org/libtorch/cpu/libtorch-shared-with-deps-1.9.0%2Bcpu.zip --no-check-certificate \
-    && unzip libtorch-shared-with-deps-1.9.0+cpu.zip \
+    && wget https://download.pytorch.org/libtorch/cu111/libtorch-cxx11-abi-shared-with-deps-1.9.0%2Bcu111.zip --no-check-certificate \
+    && unzip libtorch-cxx11-abi-shared-with-deps-1.9.0+cu111.zip \
     && cp -r libtorch/include /usr/local \
     && cp -r libtorch/lib /usr/local \
     && cp -r libtorch/share /usr/local \

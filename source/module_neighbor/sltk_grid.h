@@ -162,6 +162,11 @@ private:
 //
 //==========================================================
 	void Construct_Adjacent_expand(const int i, const int j, const int k);
+
+#ifdef ENABLE_TORCH
+	void Construct_Adjacent_expand_periodic_by_torch(const int true_i, const int true_j, const int true_k);
+#endif
+
 	void Construct_Adjacent_expand_periodic(
 	    const int i, const int j, const int k, const int ia);
 
